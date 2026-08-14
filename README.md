@@ -35,7 +35,13 @@ pnpm test
 pnpm build
 ```
 
-默认使用 DeepSeek V4 Flash 的 thinking mode（`deepseek-v4-flash` + `DEEPSEEK_REASONING_EFFORT=max`）；也可通过 `AI_PROVIDER=openai` 切换到 OpenAI。模型 key 只由服务器端 `app/api/tailor/route.ts` 读取，绝不能使用 `NEXT_PUBLIC_*`。本项目没有数据库、分析日志或云同步。生产部署还需按实际组织的访问控制与数据保留规则完善保护。
+默认使用 DeepSeek V4 Flash 的 thinking mode（`deepseek-v4-flash` + `DEEPSEEK_REASONING_EFFORT=max`）；也可通过 `AI_PROVIDER=openai` 切换到 OpenAI。环境变量 key 只由服务器端 `app/api/tailor/route.ts` 读取，绝不能使用 `NEXT_PUBLIC_*`。本项目没有数据库、分析日志或云同步。生产部署还需按实际组织的访问控制与数据保留规则完善保护。
+
+### 在网页中填写 key
+
+首次打开页面会看到“AI 连接设置”。在这里选择 DeepSeek 或 OpenAI，填写模型与 API key 后即可使用；浏览器会话中的连接优先于 `.env.local`。该 key 仅保存在当前浏览器会话的 `sessionStorage`，每次请求时临时传给本项目服务端，服务端不会将其写入文件、数据库或日志。若未填写，应用才使用部署者配置的环境变量。
+
+提供商 API 地址固定为官方 DeepSeek / OpenAI 端点，因此界面没有可填写的 Base URI。
 
 ## 文件提取边界
 

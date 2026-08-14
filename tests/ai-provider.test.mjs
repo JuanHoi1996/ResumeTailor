@@ -18,3 +18,10 @@ test("accepts an explicit OpenAI provider and rejects invalid DeepSeek effort", 
     AiConfigurationError,
   );
 });
+
+test("uses a transient browser connection instead of server environment credentials", () => {
+  assert.deepEqual(getAiConfiguration(
+    { AI_PROVIDER: "openai", OPENAI_API_KEY: "server-key" },
+    { provider: "deepseek", apiKey: "browser-key", model: "deepseek-v4-flash", reasoningEffort: "max" },
+  ), { provider: "deepseek", apiKey: "browser-key", model: "deepseek-v4-flash", effort: "max" });
+});
