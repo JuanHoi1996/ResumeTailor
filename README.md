@@ -35,7 +35,7 @@ pnpm test
 pnpm build
 ```
 
-模型 key 只由服务器端 `app/api/tailor/route.ts` 读取，绝不能使用 `NEXT_PUBLIC_*`。请求带 `store: false`；本项目没有数据库、分析日志或云同步。生产部署还需按实际组织的访问控制与数据保留规则完善保护。
+默认使用 DeepSeek V4 Flash 的 thinking mode（`deepseek-v4-flash` + `DEEPSEEK_REASONING_EFFORT=max`）；也可通过 `AI_PROVIDER=openai` 切换到 OpenAI。模型 key 只由服务器端 `app/api/tailor/route.ts` 读取，绝不能使用 `NEXT_PUBLIC_*`。本项目没有数据库、分析日志或云同步。生产部署还需按实际组织的访问控制与数据保留规则完善保护。
 
 ## 文件提取边界
 
