@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { extractResumeText } from "./extract-resume";
 import { ConnectionSettings, useAiConnection } from "./connection-settings";
 type Fact = { question: string; answer: string };
@@ -35,6 +35,9 @@ type Analysis = {
   omit: { title: string; original: string; reason: string }[];
 };
 const rank: Record<string, number> = { 前置: 0, 中位: 1, 后置: 2 };
+const isResumeFile = (file: File) => /\.(docx|pdf)$/i.test(file.name);
+const draggingFiles = (event: { dataTransfer: DataTransfer }) =>
+  Array.from(event.dataTransfer.types).includes("Files");
 export default function Home() {
   const [connection, setConnection] = useAiConnection();
   const [jdText, setJdText] = useState("");
@@ -47,6 +50,8 @@ export default function Home() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [fileMessage, setFileMessage] = useState("");
+  const [resumeDragging, setResumeDragging] = useState(false);
+  const resumeDragDepth = useRef(0);
   const importFile = async (file?: File) => {
     if (!file) return;
     setFileMessage("正在提取文本…");
@@ -62,6 +67,25 @@ export default function Home() {
       setFileMessage(e instanceof Error ? e.message : "文件解析失败");
     }
   };
+  const takeDroppedResume = (files: FileList) => {
+    const file = [...files].find(isResumeFile);
+    if (file) {
+      void importFile(file);
+      return;
+    }
+    if (files.length) setFileMessage("仅支持 .docx / .pdf，或直接粘贴简历文本。");
+  };
+  useEffect(() => {
+    const preventNavigate = (event: DragEvent) => {
+      if (event.dataTransfer?.types.includes("Files")) event.preventDefault();
+    };
+    window.addEventListener("dragover", preventNavigate);
+    window.addEventListener("drop", preventNavigate);
+    return () => {
+      window.removeEventListener("dragover", preventNavigate);
+      window.removeEventListener("drop", preventNavigate);
+    };
+  }, []);
   const run = async () => {
     setBusy(true);
     setError("");
@@ -134,10 +158,38 @@ export default function Home() {
             placeholder="粘贴完整 JD 原文…"
           />
         </section>
-        <section className="panel">
+        <section
+          className={`panel resume-drop${resumeDragging ? " is-dragging" : ""}`}
+          onDragEnter={(event) => {
+            if (!draggingFiles(event)) return;
+            event.preventDefault();
+            resumeDragDepth.current += 1;
+            setResumeDragging(true);
+          }}
+          onDragOver={(event) => {
+            if (!draggingFiles(event)) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "copy";
+          }}
+          onDragLeave={(event) => {
+            if (!draggingFiles(event)) return;
+            event.preventDefault();
+            resumeDragDepth.current -= 1;
+            if (resumeDragDepth.current <= 0) {
+              resumeDragDepth.current = 0;
+              setResumeDragging(false);
+            }
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+            resumeDragDepth.current = 0;
+            setResumeDragging(false);
+            takeDroppedResume(event.dataTransfer.files);
+          }}
+        >
           <h2>2. 简历</h2>
           <label className="upload">
-            选择 .docx / .pdf
+            {resumeDragging ? "松开即可提取文本" : "拖入或选择 .docx / .pdf"}
             <input
               type="file"
               accept=".docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"

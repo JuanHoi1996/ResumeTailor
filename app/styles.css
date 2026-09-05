@@ -60,16 +60,48 @@ select {
 textarea {
   margin-top: 10px;
 }
+.resume-drop {
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.resume-drop.is-dragging {
+  border-color: #223e69;
+  background: #f3f6fb;
+  box-shadow:
+    0 8px 30px #2332,
+    inset 0 0 0 1px #223e69;
+}
 .upload {
   display: block;
   border: 1px dashed #8aa0bd;
   border-radius: 8px;
-  padding: 10px;
+  padding: 16px 12px;
   color: #34547e;
   font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  background: #f8fafc;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+.upload:hover,
+.resume-drop.is-dragging .upload {
+  border-color: #223e69;
+  background: #e8eef8;
+  color: #223e69;
 }
 .upload input {
   display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .resume-drop,
+  .upload {
+    transition: none;
+  }
 }
 .facts {
   display: grid;

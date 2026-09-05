@@ -1,54 +1,42 @@
 # ResumeTailor
 
-一个独立、本地优先的 Web 工具，回答：**这份 JD 下，这份简历到底该讲哪几段经历？**
+针对**一份招聘启事**，帮你决定这份简历里该讲哪几段经历，并给出能追溯到原文的改写建议。
 
-它不含岗位看板、投递跟踪、账号系统、主站导航或 Word 模板回写。输入是一份 JD、一份简历文本和可选的用户确认事实；输出先给事实证据与缺口，再给经历单元级的投递版建议。
+它不是求职看板，也不替你判断「这份工作值不值得投」。它只回答：如果要投，简历该怎么讲。
 
-## 最小闭环
+## 使用方式
 
-1. 粘贴 JD；上传 `.docx` / `.pdf`（提取为文本后由用户核对）或直接粘贴简历；
-2. 可选地记录回答过且明确确认的事实；
-3. Step 1 查看 `resume_quote` / `user_confirmed` 证据、缺口和具体追问；
-4. Step 2 查看建议保留的经历、位置、原文与改写，以及本次 omit；用户能逐段取舍、排序、编辑并复制草稿。
+1. 打开页面，在「AI 连接设置」里选择 DeepSeek 或 OpenAI，并填入 API key。
+2. 粘贴完整招聘启事。
+3. 把 Word（`.docx`）或 PDF 拖进简历区，或直接粘贴正文；提取结果请先核对。
+4. 如有你已经明确确认过的事实，可以另行补上。这些内容会单独标注，不会被写成「简历原文」。
+5. 开始分析。先看对得上的证据、缺口和追问；再勾选、排序、编辑经历，最后复制本次投递草稿。
 
-## Contract 与真实性边界
-
-请求：`{ jdText, resumeText, userConfirmed: [{ question, answer }] }`。输出包含：
-
-```text
-{ summary, matches, gaps, questions,
-  suggestions: [{ title, placement, action, original, revised,
-    sourceEvidence, confirmedEvidence, jdEvidence, reason }], omit }
-```
-
-- `resume_quote` 必须逐字存在于简历；`user_confirmed` 必须逐字等于用户确认的回答；两者绝不混淆。
-- 每个 AI 改写都要有连续的 `original`、JD 原文及可追溯证据。无依据的数字、角色或程度升级会被服务端契约丢弃。
-- 用户在浏览器手动编辑后的文本不再是 AI 已校验输出，投递前必须由用户再次确认真实。
-
-## 运行
+本地运行：
 
 ```powershell
 pnpm install
-Copy-Item .env.example .env.local
 pnpm dev
-pnpm test
-pnpm build
 ```
 
-默认使用 DeepSeek V4 Flash 的 thinking mode（`deepseek-v4-flash` + `DEEPSEEK_REASONING_EFFORT=max`）；也可通过 `AI_PROVIDER=openai` 切换到 OpenAI。环境变量 key 只由服务器端 `app/api/tailor/route.ts` 读取，绝不能使用 `NEXT_PUBLIC_*`。本项目没有数据库、分析日志或云同步。生产部署还需按实际组织的访问控制与数据保留规则完善保护。
+需要 [Node.js](https://nodejs.org/) 22 或更高版本。浏览器打开 [http://localhost:3517](http://localhost:3517)。
 
-### 在网页中填写 key
+不想每次打开页面都填 key 的话，可以把 `.env.example` 复制为 `.env.local`，在文件里填写服务端默认配置。页面里填写的连接会优先使用。
 
-首次打开页面会看到“AI 连接设置”。在这里选择 DeepSeek 或 OpenAI，填写模型与 API key 后即可使用；浏览器会话中的连接优先于 `.env.local`。该 key 仅保存在当前浏览器会话的 `sessionStorage`，每次请求时临时传给本项目服务端，服务端不会将其写入文件、数据库或日志。若未填写，应用才使用部署者配置的环境变量。
+## 真实性
 
-提供商 API 地址固定为官方 DeepSeek / OpenAI 端点，因此界面没有可填写的 Base URI。
+- 来自简历的引用，必须能在简历原文里逐字找到。
+- 来自你确认的事实，必须等于你写下的回答，并且始终单独标注。
+- 改写不能出现原文和确认事实里都没有的数字、职位、职责或程度。对不上的内容会变成缺口或追问，而不是被编出来。
+- 「这次不放」只表示不适合当前这份招聘启事，不是在否定这段经历。
+- 你在页面上改过的文字，投递前请再核对一遍。
 
-## 文件提取边界
+## 隐私与文件
 
-`.docx` 使用 Mammoth 提取纯文本；`.pdf` 使用 pdf.js 提取文本层。扫描件、复杂分栏、图片文字和原始版式可能提取不完整；本工具不回写 Word 模板，也不承诺保留格式。提取后必须核对文本。
+API key 只保存在当前浏览器会话里；分析时会临时发给本机服务去调用模型，不会写入这个项目的文件或数据库。本工具没有账号系统，也不做云同步。
 
-## 非目标
+Word 和 PDF 只提取文字。扫描件、复杂分栏、图片里的字，以及原来的版式，都可能丢失或不完整。提取后请核对文本。本工具不回写成 Word 或 PDF 文件。
 
-- 不做岗位追踪、投递管理、登录、云数据库、主站导航或 Word/PDF 模板导出；
-- 不将岗位适配与“值不值得投”合成一个分数；后者由独立的 JobChoiceRanker 处理；
-- 不创建 shared package：两个项目目前只通过各自的 JSON contract 保持边界。
+## 许可
+
+[MIT](LICENSE)
